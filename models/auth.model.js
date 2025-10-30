@@ -34,7 +34,7 @@ const authschema = new Schema({
         ],
         required: true
     }
-});
+},{timestamps: true});
 
 
 const Auth = model("Auth", authschema);
