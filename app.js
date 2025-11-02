@@ -5,6 +5,7 @@ import authRouter from "./routes/auth.route.js"
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import enrollRouter from "./routes/enroll.route.js";
+import attendanceRouter from "./routes/attendance.route.js";
 
 
 dotenv.config();
@@ -16,6 +17,8 @@ app.use(express.urlencoded({extended: true}));
 app.use('/api/v1/auth', authRouter);
 
 app.use('/api/v1', enrollRouter);
+
+app.use('/api/v1/attendance', attendanceRouter);
 
 
 
