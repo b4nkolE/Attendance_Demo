@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import enrollRouter from "./routes/enroll.route.js";
 import attendanceRouter from "./routes/attendance.route.js";
+import cron from "node-cron";
+import { autoMarkAbsence } from "./controllers/enroll.controller.js";
 
 
 dotenv.config();
@@ -19,6 +21,11 @@ app.use('/api/v1/auth', authRouter);
 app.use('/api/v1', enrollRouter);
 
 app.use('/api/v1/attendance', attendanceRouter);
+
+cron.schedule('* * * * *', async () => {
+    console.log("Testing auto marking")
+    await autoMarkAbsence(null, null);
+})
 
 
 
