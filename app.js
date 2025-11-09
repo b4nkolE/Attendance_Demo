@@ -22,7 +22,7 @@ app.use('/api/v1', enrollRouter);
 
 app.use('/api/v1/attendance', attendanceRouter);
 
-cron.schedule('* * * * *', async () => {
+cron.schedule('59 13 * * *', async () => {
     console.log("Testing auto marking")
     await autoMarkAbsence(null, null);
 })
