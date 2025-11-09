@@ -121,58 +121,58 @@ export const markAttendance = async (req, res) => {
 };
 
 export const autoMarkAbsence = async (req, res) => {
-  try {
+  try{
+    //Declare today's date...
     const today = new Date();
 
-    //Don't run on weekends
-    if (checkWeekend(today)) {
-      const message = "Weekend - No auto-marking needed";
+    // use the date to check the weekend...
+    if(checkWeekend(today)){
+      const message = "Weekend - Cannot mark attendance on weekends";
       console.log(message);
-      if (res) {
-        return res.status(200).json({ message });
+
+      if(res){
+        res.status(200).json({message});
       }
       return;
     }
 
-    const startOfDay = dayBegins(today);
-    const endOfDay = dayEnds(today);
+    //declare the start of today and the end of today
+    const dawn = dayBegins(today); // Pass the today's date... 8:00 am
+    const dusk = dayEnds(today); // 13:59 pm
 
+    //Find all students in the database...
     const students = await Enroll.find({});
-    let MarkedCount = 0;
 
-    for (const student of students) {
+    //loop through all the students in order to find the ones that are present *today*.
+    //declare all absent students
+    let absentStudent = 0
+
+    //loop through
+    for(const student in students){
       const countPresent = student.attendance.some((record) => {
+        //find from today's date
         const recordDate = new Date(record.date);
-        return (
-          record.status === "present" &&
-          recordDate >= startOfDay &&
-          recordDate <= endOfDay
-        );
+        return record.status === "present" && recordDate >= dawn && recordDate <= dusk;
       });
-
-      if (!countPresent) {
+      //if what has been looped through doesn't match the return values, push absent onto their record
+      if(!countPresent){
         student.attendance.push({
           date: today,
-          status: "absent",
+          status: 'absent'
         });
-
         await student.save();
-        MarkedCount++;
-        console.log(`Auto marked ${student.email} as absent today ${today}`);
+        absentStudent++;
+        console.log(`Marked ${student.email} absent for ${today} `);
       }
     }
-
-    console.log(`The total students marked absent today is ${MarkedCount}`);
-
-    if (res) {
-      return res.json({ message: "Absence added" });
+    console.log(`total numer of students marked absent is ${absentStudent}`);
+    if(res){
+      res.json({message: "Absence Added"});
     }
-
-    return;
-  } catch (error) {
-    console.error(`Error in absent marking ${error}`);
-    if (res) {
-      return res.status(500).json({ error: error.message });
+  }catch(error){
+    console.error(`Could not mark absence because of ${error}`);
+    if(res){
+      res.status(500).json({error: error.message});
     }
   }
-};
+}
