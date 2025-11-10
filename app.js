@@ -8,12 +8,19 @@ import enrollRouter from "./routes/enroll.route.js";
 import attendanceRouter from "./routes/attendance.route.js";
 import cron from "node-cron";
 import { autoMarkAbsence } from "./controllers/enroll.controller.js";
+import cors from "cors";
 
 
 dotenv.config();
 const app = express();
 app.use(cookieParser());
 app.use(express.json());
+app.use(cors({
+    origin: "http://localhost:8000",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: false,
+    allowedHeaders: ["Content-type", "Authorization"]
+}));
 app.use(express.urlencoded({extended: true}));
 
 app.use('/api/v1/auth', authRouter);

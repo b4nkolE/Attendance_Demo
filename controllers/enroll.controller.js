@@ -148,7 +148,7 @@ export const autoMarkAbsence = async (req, res) => {
     let absentStudent = 0
 
     //loop through
-    for(const student in students){
+    for(const student of students){
       const countPresent = student.attendance.some((record) => {
         //find from today's date
         const recordDate = new Date(record.date);
@@ -176,3 +176,40 @@ export const autoMarkAbsence = async (req, res) => {
     }
   }
 }
+
+export const getOverallAttendance =  async (req, res) => {
+  try{
+    //Get all the students.
+    const students =  await Enroll.find({});
+    // const allStudent = [];
+    // for(const student of students){
+    //   allStudent.push({
+    //     firstName: student.firstName,
+    //     lastName: student.lastName,
+    //     email: student.email,
+    //     phoneNumber: student.phoneNumber,
+    //     track: student.learningTrack,
+    //     attendance: student.attendance
+    //   });
+    // }
+
+    const allStudent = students.map((student) => ({
+        firstName: student.firstName,
+        lastName: student.lastName,
+        email: student.email,
+        phoneNumber: student.phoneNumber,
+        track: student.learningTrack,
+        attendance: student.attendance
+    }));
+
+    return res.status(200).json({
+      message: "All students returned",
+      students: allStudent
+    })
+    
+  } catch(error){
+    console.error(`There was an issue getting all students ${error}`);
+    return res.status(500).json({message: "something went wrong", error: error.message});
+  }
+}
+
