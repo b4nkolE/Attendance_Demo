@@ -16,7 +16,7 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json());
 app.use(cors({
-    origin: "http://localhost:8000",
+    origin: "",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: false,
     allowedHeaders: ["Content-type", "Authorization"]
@@ -33,9 +33,6 @@ cron.schedule('59 13 * * *', async () => {
     console.log("Testing auto marking")
     await autoMarkAbsence(null, null);
 })
-
-
-
 
 
 

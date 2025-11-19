@@ -3,6 +3,7 @@ import Auth from "../models/auth.model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { JWT_EXPIRES_IN, JWT_SECRET } from "../config/env.js";
+import { authMiddleware } from "../middlewares/admin.auth.js";
 
 
 
@@ -75,7 +76,7 @@ export const signIn = async(req, res) => {
         }
         //After it's passed through all these checks, sign in
         session.commitTransaction();
-        const token = jwt.sign({userId: userExist._id}, JWT_SECRET, {expiresIn: JWT_EXPIRES_IN});
+        const token = jwt.sign({userId: userExist._id, name: userExist.name}, JWT_SECRET, {expiresIn: JWT_EXPIRES_IN});
         return res.status(200).json({message: "Login sucessful", token});
     } catch(error){
         session.endSession();
@@ -83,3 +84,10 @@ export const signIn = async(req, res) => {
     }
 
 }
+
+
+
+export const adminValidation =  (req, res) => {
+    return res.status(200).json({message: `Welcome to your dashboard, ${req.auth.name}!`});
+};
+
