@@ -278,6 +278,7 @@ export const getTotalAttendance = async(req, res) => {
         presentToday++;
       }
     }
+    //get abscence
     const getAbsentStudent = allStudents - presentToday;
     const absentStudent = (getAbsentStudent / allStudents) * 100;
 
