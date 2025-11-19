@@ -40,6 +40,7 @@ export const enroll = async (req, res, next) => {
   }
 };
 
+//Helper Function
 const checkWeekend = (date) => {
   const theDay = new Date(date).getDay();
   return theDay === 0 || theDay === 6;
@@ -81,7 +82,7 @@ export const markAttendance = async (req, res) => {
     const student = await Enroll.findOne({ email });
 
     if (!student) {
-      return res.status(400).json({ message: "Student not enrolled!" });
+      return res.status(404).json({ message: "Student not enrolled!" });
     }
 
     const today = new Date();
@@ -94,6 +95,16 @@ export const markAttendance = async (req, res) => {
 
     const dayStartsAt = dayBegins(today);
     const dayEndsAt = dayEnds(today);
+
+    if (today < dayStartsAt) {
+      return res.status(400).json({ message: "Attendance hasn't opened yet" });
+    }
+
+    if (today > dayEndsAt) {
+      return res
+        .status(400)
+        .json({ message: "Attendance has closed for the day" });
+    }
 
     const marked = student.attendance.some((record) => {
       const recordDate = new Date(record.date);
@@ -110,8 +121,8 @@ export const markAttendance = async (req, res) => {
       date: today,
       status: "present",
     });
-    await student.save();
 
+    await student.save();
     return res.status(200).json({ message: "Attendance marked successfully" });
   } catch (error) {
     return res
@@ -121,17 +132,17 @@ export const markAttendance = async (req, res) => {
 };
 
 export const autoMarkAbsence = async (req, res) => {
-  try{
+  try {
     //Declare today's date...
     const today = new Date();
 
     // use the date to check the weekend...
-    if(checkWeekend(today)){
+    if (checkWeekend(today)) {
       const message = "Weekend - Cannot mark attendance on weekends";
       console.log(message);
 
-      if(res){
-        res.status(200).json({message});
+      if (res) {
+        res.status(200).json({ message });
       }
       return;
     }
@@ -145,20 +156,24 @@ export const autoMarkAbsence = async (req, res) => {
 
     //loop through all the students in order to find the ones that are present *today*.
     //declare all absent students
-    let absentStudent = 0
+    let absentStudent = 0;
 
     //loop through
-    for(const student of students){
+    for (const student of students) {
       const countPresent = student.attendance.some((record) => {
         //find from today's date
         const recordDate = new Date(record.date);
-        return record.status === "present" && recordDate >= dawn && recordDate <= dusk;
+        return (
+          record.status === "present" &&
+          recordDate >= dawn &&
+          recordDate <= dusk
+        );
       });
       //if what has been looped through doesn't match the return values, push absent onto their record
-      if(!countPresent){
+      if (!countPresent) {
         student.attendance.push({
           date: today,
-          status: 'absent'
+          status: "absent",
         });
         await student.save();
         absentStudent++;
@@ -166,21 +181,21 @@ export const autoMarkAbsence = async (req, res) => {
       }
     }
     console.log(`total numer of students marked absent is ${absentStudent}`);
-    if(res){
-      res.json({message: "Absence Added"});
+    if (res) {
+      res.json({ message: "Absence Added" });
     }
-  }catch(error){
+  } catch (error) {
     console.error(`Could not mark absence because of ${error}`);
-    if(res){
-      res.status(500).json({error: error.message});
+    if (res) {
+      res.status(500).json({ error: error.message });
     }
   }
-}
+};
 
-export const getOverallAttendance =  async (req, res) => {
-  try{
+export const getOverallAttendance = async (req, res) => {
+  try {
     //Get all the students.
-    const students =  await Enroll.find({});
+    const students = await Enroll.find({});
     // const allStudent = [];
     // for(const student of students){
     //   allStudent.push({
@@ -194,22 +209,85 @@ export const getOverallAttendance =  async (req, res) => {
     // }
 
     const allStudent = students.map((student) => ({
-        firstName: student.firstName,
-        lastName: student.lastName,
-        email: student.email,
-        phoneNumber: student.phoneNumber,
-        track: student.learningTrack,
-        attendance: student.attendance
+      id: student._id,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      phoneNumber: student.phoneNumber,
+      track: student.learningTrack,
+      getAttendancePercentage: student.getAttendancePercentage(),
     }));
+
+    console.log(
+      `Total number of students to mark attendance today is ${allStudent.length}`
+    );
 
     return res.status(200).json({
       message: "All students returned",
-      students: allStudent
-    })
-    
-  } catch(error){
+      students: allStudent,
+    });
+  } catch (error) {
     console.error(`There was an issue getting all students ${error}`);
+    return res
+      .status(500)
+      .json({ message: "something went wrong", error: error.message });
+  }
+};
+
+//To get the total tracks...
+export const getTotalTracks = async(req, res) =>{
+  try{
+  //get the schema
+  const schema = await Enroll.schema;
+  //get the field you need from the schema
+  const theField = schema.path('learningTrack');
+  //get the length of the field.
+  const totalTracks = theField.options.enum.length;
+  return res.status(200).json({message: "Total number of tracks is: ", tracks: totalTracks});
+  } catch(error){
     return res.status(500).json({message: "something went wrong", error: error.message});
   }
 }
 
+export const getTotalAttendance = async(req, res) => {
+  try{
+    //get today's date
+    const today = new Date();
+    //get the start of day and end of day...
+    const startOfDay = dayBegins(today);
+    const endOfDay = dayEnds(today);
+
+    //find the students
+    const students = await Enroll.find({});
+    //get the length of the documents
+    const allStudents = students.length;
+
+    //check if the students is empty...
+    if(allStudents === 0){
+      return res.status(200).json({message: "Total percentage is 0", percentage: 0});
+    }
+
+    //get all students that are present for a day
+    let presentToday = 0;
+    for (const student of students){
+      const countPresent = student.attendance.some((record) => {
+        const recordDate = new Date(record.date);
+        return record.status === "present" && recordDate >= startOfDay && recordDate <= endOfDay; 
+      });
+      if(countPresent){
+        presentToday++;
+      }
+    }
+    const getAbsentStudent = allStudents - presentToday;
+    const absentStudent = (getAbsentStudent / allStudents) * 100;
+
+    const presentStudents = (presentToday / allStudents) * 100;
+    return res.status(200).json({message: "The total percentage of students present and absent are",
+      present: presentStudents,
+      absent: absentStudent,
+      total: allStudents
+    })
+  } catch(error){
+    return res.status(500).json({message: "Something went wrong", error: error.message});
+  }
+}
