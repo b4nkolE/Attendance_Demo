@@ -85,9 +85,10 @@ export const signIn = async(req, res) => {
 
 }
 
+export const adminValidation = (req, res) => {
+    return res.status(200).json({message: `Welcome to your dashboard ${req.auth.name}`});
+}
 
 
-export const adminValidation =  (req, res) => {
-    return res.status(200).json({message: `Welcome to your dashboard, ${req.auth.name}!`});
-};
+
 

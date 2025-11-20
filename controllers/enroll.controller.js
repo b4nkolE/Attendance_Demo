@@ -192,47 +192,6 @@ export const autoMarkAbsence = async (req, res) => {
   }
 };
 
-export const getOverallAttendance = async (req, res) => {
-  try {
-    //Get all the students.
-    const students = await Enroll.find({});
-    // const allStudent = [];
-    // for(const student of students){
-    //   allStudent.push({
-    //     firstName: student.firstName,
-    //     lastName: student.lastName,
-    //     email: student.email,
-    //     phoneNumber: student.phoneNumber,
-    //     track: student.learningTrack,
-    //     attendance: student.attendance
-    //   });
-    // }
-
-    const allStudent = students.map((student) => ({
-      id: student._id,
-      firstName: student.firstName,
-      lastName: student.lastName,
-      email: student.email,
-      phoneNumber: student.phoneNumber,
-      track: student.learningTrack,
-      getAttendancePercentage: student.getAttendancePercentage(),
-    }));
-
-    console.log(
-      `Total number of students to mark attendance today is ${allStudent.length}`
-    );
-
-    return res.status(200).json({
-      message: "All students returned",
-      students: allStudent,
-    });
-  } catch (error) {
-    console.error(`There was an issue getting all students ${error}`);
-    return res
-      .status(500)
-      .json({ message: "something went wrong", error: error.message });
-  }
-};
 
 //To get the total tracks...
 export const getTotalTracks = async(req, res) =>{
@@ -288,6 +247,113 @@ export const getTotalAttendance = async(req, res) => {
       absent: absentStudent,
       total: allStudents
     })
+  } catch(error){
+    return res.status(500).json({message: "Something went wrong", error: error.message});
+  }
+}
+
+//get student by id
+export const getStudentById = async(req, res) => {
+  try{
+      const {id} = req.params;
+
+      const student = await Enroll.findById(id);
+
+      if(!student){
+        return res.status(400).json({message: "Student Id does not exist"});
+      }
+
+      const theStudent = {
+      firstName: student.firstName,
+      lastName: student.lastName,
+      email: student.email,
+      phoneNumber: student.phoneNumber,
+      track: student.learningTrack,
+      getAttendancePercentage: student.getAttendancePercentage(),
+      }
+
+      return res.status(200).json({message: "student found", student: theStudent});
+  } catch(error){
+    return res.status(500).json({message: "Something went wrong", error: error.message});
+  }
+}
+
+
+export const getAttendanceByDateRange = async (req, res) => {
+  try{
+    const {start, end} = req.query;
+
+    if(!start || !end){
+      return res.status(400).json({message: "Start date and End date are required!"})
+    }
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    if(isNaN(startDate) || isNaN(endDate)){
+      return res.status(400).json({message: "Not a valid date, YYYY-MM-DD"});
+    }
+
+    const students = await Enroll.find({}, {
+      firstName: 1,
+      lastName: 1,
+      email: 1,
+      gender: 1,
+      learningTrack: 1,
+      attendance: 1,
+    });
+
+    const findStudents = students.map((student) => {
+      const filteredStudents = student.attendance.filter((record) => {
+        const recordDate = new Date(record.date);
+        return recordDate >= startDate && recordDate <= endDate;
+      })
+
+      if(filteredStudents > 0){
+        return {
+        name: `${student.firstName} ${student.lastName}`,
+        email: student.email,
+        track: student.learningTrack,
+        gender: student.gender
+      }
+      }
+      return null
+    }).filter(Boolean)
+
+    res.status(200).json({
+      message: "successful",
+      data: findStudents,
+    })
+
+  } catch (error){
+    return res.status(500).json({message: "Something went wrong", error: error.message});
+  }
+}
+
+export const getOverallAttendance =  async(req, res) => {
+  try{
+    //Adding filtering by track to it...
+    const {learningTrack} = req.query;
+
+    //create a tenary operator that accepts the track or not...
+    const filter = learningTrack ? {learningTrack: learningTrack} : {};
+
+    //Get all students..
+    const students = await Enroll.find(filter);
+
+    const allStudents = students.map((student) => ({
+      name: `${student.firstName} ${student.lastName}`,
+      email: student.email,
+      track: student.learningTrack,
+      gender: student.gender,
+      phoneNumber: student.phoneNumber,
+      attendancePercentage: student.getAttendancePercentage()
+    }));
+
+    return res.status(200).json({message: "students gotten successfully", students: allStudents});
   } catch(error){
     return res.status(500).json({message: "Something went wrong", error: error.message});
   }
