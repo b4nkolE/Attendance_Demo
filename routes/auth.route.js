@@ -10,7 +10,7 @@ authRouter.post("/sign-up", signUp);
 
 authRouter.post("/sign-in", signIn);
 
-authRouter.get("/dashboard", authMiddleware, adminValidation);
+authRouter.get('/dashboard', authMiddleware, adminValidation);
 
 
 export default authRouter;
