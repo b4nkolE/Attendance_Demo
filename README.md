@@ -73,7 +73,7 @@ Ensure you have the following installed on your system:
 Start the server using:
 
 ```bash
-npm start
+nodemon run dev
 ```
 
 The application will run on the port defined in your environment variables.
