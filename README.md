@@ -56,11 +56,14 @@ Ensure you have the following installed on your system:
 
 3. Create an environment file
 
-   Create a `.env` file in the project root and define the required variables:
+   Create a `.env.development.local` file in the project root and define the required variables:
 
-   ```env
+   ```env.development.loacal
    PORT=3000
    DB_URI=your_database_connection_string
+   JWT_SECRET='your_secret_key'
+   JWT_EXPIRES_IN=h e.g 1h, 2h, 1d, 2d.
+   NODE_ENV=develoment
    ```
 
 ---
