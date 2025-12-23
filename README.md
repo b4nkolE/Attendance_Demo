@@ -150,5 +150,5 @@ This project is open‑source and available under the **MIT License**.
 ## Author
 
 **Oluwafemi Bankole**
-
+**obankole683@gmail.com**
 For questions or discussions, feel free to open an issue in the repository.
